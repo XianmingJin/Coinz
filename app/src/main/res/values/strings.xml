@@ -21,4 +21,7 @@
     <string name="edinburgh">Edinburgh</string>
     <string name="email">Email:</string>
     <string name="go_back">Go Back</string>
+    <string name="profile">profile</string>
+    <string name="log_out">log out</string>
+    <string name="setting">setting</string>
 </resources>

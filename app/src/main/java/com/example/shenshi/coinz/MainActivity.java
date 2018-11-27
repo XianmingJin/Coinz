@@ -4,6 +4,8 @@ import android.location.Location;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
+import android.widget.Toast;
 
 import com.mapbox.android.core.location.LocationEngine;
 import com.mapbox.android.core.location.LocationEngineListener;
@@ -25,6 +27,7 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, LocationEngineListener,PermissionsListener {
 
+    private String TAG = "MainActivity";
     private MapView mapView;
     private MapboxMap map;
     private PermissionsManager permissionsManager;
@@ -34,10 +37,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
-        Mapbox.getInstance(this, "pk.eyJ1IjoieGlhbm1pbmciLCJhIjoiY2pvNmJrN3k1MGZzdTNrb2FuZTBrOXdubSJ9.vds-Scq8-Z-G9evslm13Cw");
         setContentView(R.layout.activity_main);
-        mapView = (MapView) findViewById(R.id.mapboxMapView);
+
+        Mapbox.getInstance(this, getString(R.string.access_token));
+        mapView = findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
 
@@ -45,13 +50,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onMapReady(MapboxMap mapboxMap) {
-        map = mapboxMap;
-        enableLocation();
+        if (mapboxMap == null){
+            Log.d(TAG,"[OnMapReady] mapBox is null" );
+        }else {
+            map = mapboxMap;
+
+            map.getUiSettings().setCompassEnabled(true);
+            map.getUiSettings().setZoomControlsEnabled(true);
+
+            enableLocation();
+        }
+
     }
 
     private void enableLocation(){
         if (PermissionsManager.areLocationPermissionsGranted(this)){
-
+            Log.d(TAG,"Permission are granted");
+            initializeLocationEngine();
+            initializeLocationLayer();
         }else{
             permissionsManager = new PermissionsManager(this);
             permissionsManager.requestLocationPermissions(this);
@@ -62,6 +78,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @SuppressWarnings("MissingPermission")
     private void initializeLocationEngine(){
         locationEngine = new LocationEngineProvider(this).obtainBestLocationEngineAvailable();
+        locationEngine.setInterval(5000);
+        locationEngine.setFastestInterval(1000);
         locationEngine.setPriority(LocationEnginePriority.HIGH_ACCURACY);
         locationEngine.activate();
 
@@ -76,58 +94,68 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @SuppressWarnings("MissingPermission")
     private void initializeLocationLayer(){
-        locationLayerPlugin = new LocationLayerPlugin(mapView,map,locationEngine);
-        locationLayerPlugin.setLocationLayerEnabled(true);
-        locationLayerPlugin.setCameraMode(CameraMode.TRACKING);
-        locationLayerPlugin.setRenderMode(RenderMode.NORMAL);
+        if (mapView ==null){
+            Log.d(TAG,"mapView is null");
+        }else {
+            if (map == null){
+                Log.d(TAG,"map is null");
+            }else{
+                locationLayerPlugin = new LocationLayerPlugin(mapView, map, locationEngine);
+                locationLayerPlugin.setLocationLayerEnabled(true);
+                locationLayerPlugin.setCameraMode(CameraMode.TRACKING);
+                locationLayerPlugin.setRenderMode(RenderMode.NORMAL);
+            }
+        }
     }
 
     private void setCameraPosition(Location location) {
-        map.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(),
-                location.getLongitude()), 13.0));
-    }
-
-    @SuppressWarnings("MissingPermission")
-    @Override
-    public void onConnected() {
-        locationEngine.requestLocationUpdates();
+        LatLng latLng = new LatLng(location.getLatitude(),location.getLongitude());
+        map.animateCamera(CameraUpdateFactory.newLatLng(latLng));
     }
 
     @Override
     public void onLocationChanged(Location location) {
-        if (location != null){
+        if (location == null){
+            Log.d(TAG,"[OnLocationChanged] location is null");
+        }else {
+            Log.d(TAG,"[onLocationChanged] location is not null");
             originLocation = location;
             setCameraPosition(location);
         }
     }
 
+    @SuppressWarnings("MissingPermission")
+    @Override
+    public void onConnected() {
+        Log.d(TAG,"[onConnected] requesting location updates");
+        locationEngine.requestLocationUpdates();
+    }
+
+
+
     @Override
     public void onExplanationNeeded(List<String> permissionsToExplain) {
-
+        Log.d(TAG,"Permission: " + permissionsToExplain.toString());
     }
 
     @Override
     public void onPermissionResult(boolean granted) {
+        Log.d(TAG,"[onPermissionResult] granted == " + granted);
         if (granted) {
             enableLocation();
         }
+        else{
+            Toast.makeText(getApplicationContext(),"Permission is not granted",Toast.LENGTH_SHORT).show();
+            return;
+        }
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        permissionsManager.onRequestPermissionsResult(requestCode,permissions,grantResults);
-    }
+
 
     @SuppressWarnings("MissingPermission")
     @Override
     public void onStart() {
         super.onStart();
-        if (locationEngine != null){
-            locationEngine.requestLocationUpdates();
-        }
-        if (locationLayerPlugin != null){
-            locationLayerPlugin.onStart();
-        }
         mapView.onStart();
     }
 
@@ -146,12 +174,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onStop() {
         super.onStop();
-        if (locationEngine != null){
-            locationEngine.removeLocationUpdates();
-        }
-        if (locationLayerPlugin != null){
-            locationLayerPlugin.onStop();
-        }
         mapView.onStop();
     }
 
@@ -164,9 +186,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (locationEngine != null){
-            locationEngine.deactivate();
-        }
         mapView.onDestroy();
     }
 
