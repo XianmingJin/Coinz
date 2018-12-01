@@ -3,7 +3,9 @@
     package="com.example.shenshi.coinz">
 
     <!-- To auto-complete the email text field in the login form with the user's emails -->
+
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.READ_PROFILE" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
@@ -24,7 +26,9 @@
             </intent-filter>
         </activity>
         <activity android:name=".MainActivity" />
-        <activity android:name=".SignUp_activity"></activity>
+        <activity android:name=".SignUp_activity" />
+        <activity android:name=".Wallet" />
+        <activity android:name=".Bank"></activity>
     </application>
 
 </manifest>

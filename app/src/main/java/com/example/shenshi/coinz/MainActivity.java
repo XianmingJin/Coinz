@@ -1,33 +1,59 @@
 package com.example.shenshi.coinz;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.PopupMenu;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
 import android.widget.Toast;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.mapbox.android.core.location.LocationEngine;
 import com.mapbox.android.core.location.LocationEngineListener;
 import com.mapbox.android.core.location.LocationEnginePriority;
 import com.mapbox.android.core.location.LocationEngineProvider;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
+import com.mapbox.geojson.Feature;
+import com.mapbox.geojson.FeatureCollection;
+import com.mapbox.geojson.Geometry;
+import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.annotations.Icon;
+import com.mapbox.mapboxsdk.annotations.IconFactory;
+import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
+import com.mapbox.mapboxsdk.maps.MapboxMapOptions;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.plugins.locationlayer.LocationLayerPlugin;
 import com.mapbox.mapboxsdk.plugins.locationlayer.modes.CameraMode;
 import com.mapbox.mapboxsdk.plugins.locationlayer.modes.RenderMode;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, LocationEngineListener,PermissionsListener {
 
-    private String TAG = "MainActivity";
+
+public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener,OnMapReadyCallback, LocationEngineListener,PermissionsListener {
+
+    private final String TAG = "MainActivity";
+
+    //Map
     private MapView mapView;
     private MapboxMap map;
     private PermissionsManager permissionsManager;
@@ -35,18 +61,101 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private LocationLayerPlugin locationLayerPlugin;
     private Location originLocation;
 
+    private String downloadDate = ""; // Format: YYYY/MM/DD
+    private final String preferencesFile = "MyPrefsFile"; // for storing preferences
+
+    //pop menu
+    private static String POPUP_CONSTANT = "mPopup";
+    private static String POPUP_FORCE_SHOW_ICON = "setForceShowIcon";
+
+    //logout
+    FirebaseAuth mAuth;
+    FirebaseAuth.AuthStateListener mAuthListener;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
+
+        //logout
+        mAuth = FirebaseAuth.getInstance();
+        mAuthListener = new FirebaseAuth.AuthStateListener(){
+            @Override
+            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+                if (firebaseAuth.getCurrentUser()==null)
+                {
+                    startActivity(new Intent(MainActivity.this, Login_activity.class));
+                }
+            }
+        };
+
+        //download Map
+        String mapURL = "http://homepages.inf.ed.ac.uk/stg/coinz/2018/10/03/coinzmap.geojson";
+        DownloadFileTask myTask = new DownloadFileTask();
+        myTask.execute(mapURL);
+
+        //Map
+        Mapbox.getInstance(this, getString(R.string.access_token));
+
         setContentView(R.layout.activity_main);
 
-        Mapbox.getInstance(this, getString(R.string.access_token));
+
         mapView = findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
 
     }
+
+    @Override
+    public boolean onCreateOptionsMenu (Menu menu){
+        MenuInflater inflater = getMenuInflater ();
+        inflater.inflate (R.menu.option_menu, menu);
+        return true;
+    }
+
+    public boolean onMenuItemSelect (MenuItem item){
+        showPopup (findViewById(item.getItemId()));
+        return true;
+    }
+
+    private void showPopup(View view) {
+        PopupMenu popup = new PopupMenu(MainActivity.this, view);
+        try {
+            // Reflection apis to enforce show icon
+            Field[] fields = popup.getClass().getDeclaredFields();
+            for (Field field : fields) {
+                if (field.getName().equals(POPUP_CONSTANT)) {
+                    field.setAccessible(true);
+                    Object menuPopupHelper = field.get(popup);
+                    Class<?> classPopupHelper = Class.forName(menuPopupHelper.getClass().getName());
+                    Method setForceIcons = classPopupHelper.getMethod(POPUP_FORCE_SHOW_ICON, boolean.class);
+                    setForceIcons.invoke(menuPopupHelper, true);
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        popup.getMenuInflater().inflate(R.menu.popup_menu, popup.getMenu());
+        popup.setOnMenuItemClickListener(this);
+        popup.show();
+    }
+
+    @Override
+    public boolean onMenuItemClick(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.wallet:
+                Toast.makeText(MainActivity.this, "You clicked delete", Toast.LENGTH_SHORT).show();
+                break;
+            case R.id.bank:
+                Toast.makeText(MainActivity.this, "You clicked delete", Toast.LENGTH_SHORT).show();
+                break;
+            case R.id.logout:
+                mAuth.signOut();
+        }
+        return false;
+    }
+
+
 
     @Override
     public void onMapReady(MapboxMap mapboxMap) {
@@ -55,10 +164,47 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }else {
             map = mapboxMap;
 
+
             map.getUiSettings().setCompassEnabled(true);
             map.getUiSettings().setZoomControlsEnabled(true);
 
             enableLocation();
+        }
+
+        // adding markers
+        Log.d(TAG,"result is "+ DownloadCompleteRunner.result.length());
+        Log.d(TAG,"result is done");
+
+
+        List<Feature> coins = FeatureCollection.fromJson(DownloadCompleteRunner.result).features();
+        Log.d(TAG,"result is size"+coins);
+        for (int i =0;i<coins.size();i++){
+
+            Feature coin =  coins.get(i);
+
+            //get coordinates
+            Geometry g = coin.geometry();
+            Point p = (Point) g;
+            List<Double> c = p.coordinates();
+            double lng = c.get(0);
+            double lat = c.get(1);
+            LatLng loc = new LatLng(lat,lng);
+            Log.d(TAG,"loc is "+loc);
+            //get properties
+            JsonObject j = coin.properties();
+            String cur = j.get("currency").toString();
+            String val = j.get("value").toString();
+            String id = j.get("id").toString();
+            String symbol = j.get("marker-symbol").toString();
+            String color = (j.get("marker-color").toString());
+
+
+            map.addMarker(new MarkerOptions().
+                    title(id).
+                    snippet("currency:"+cur+"\n"+"value:"+val).
+                    position(new LatLng(lat,lng))
+            );
+
         }
 
     }
@@ -78,10 +224,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @SuppressWarnings("MissingPermission")
     private void initializeLocationEngine(){
         locationEngine = new LocationEngineProvider(this).obtainBestLocationEngineAvailable();
-        locationEngine.setInterval(5000);
-        locationEngine.setFastestInterval(1000);
         locationEngine.setPriority(LocationEnginePriority.HIGH_ACCURACY);
         locationEngine.activate();
+
+
+
 
         Location lastLocation = locationEngine.getLastLocation();
         if (lastLocation != null){
@@ -110,7 +257,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void setCameraPosition(Location location) {
         LatLng latLng = new LatLng(location.getLatitude(),location.getLongitude());
-        map.animateCamera(CameraUpdateFactory.newLatLng(latLng));
+        map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 13.0));
     }
 
     @Override
@@ -150,12 +297,41 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        permissionsManager.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
 
     @SuppressWarnings("MissingPermission")
     @Override
     public void onStart() {
+
         super.onStart();
+
+        //logout
+
+        mAuth.addAuthStateListener(mAuthListener);
+
+        //remembering the last date that a map was downloaded
+
+        // Restore preferences
+        SharedPreferences settings = getSharedPreferences(preferencesFile,
+                Context.MODE_PRIVATE);
+        // use ”” as the default value (this might be the first time the app is run)
+        downloadDate = settings.getString("lastDownloadDate", "");
+        Log.d(TAG, "[onStart] Recalled lastDownloadDate is ’" + downloadDate + "’");
+
+
+        //Map
+        if (locationEngine != null){
+            locationEngine.requestLocationUpdates();
+        }
+        if (locationLayerPlugin != null){
+            locationLayerPlugin.onStart();
+        }
+
+
+
         mapView.onStart();
     }
 
@@ -174,6 +350,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onStop() {
         super.onStop();
+
+        //writing out updated preference
+        Log.d(TAG, "[onStop] Storing lastDownloadDate of " + downloadDate);
+        // All objects are from android.context.Context
+        SharedPreferences settings = getSharedPreferences(preferencesFile,
+                Context.MODE_PRIVATE);
+        // We need an Editor object to make preference changes.
+        SharedPreferences.Editor editor = settings.edit();
+        editor.putString("lastDownloadDate", downloadDate);
+        // Apply the edits!
+        editor.apply();
+
+        //Map
+        if (locationEngine !=null){
+            locationEngine.removeLocationUpdates();
+        }
+        if (locationLayerPlugin != null) {
+            locationLayerPlugin.onStop();
+        }
         mapView.onStop();
     }
 
@@ -186,6 +381,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (locationEngine != null){
+            locationEngine.deactivate();
+        }
         mapView.onDestroy();
     }
 
