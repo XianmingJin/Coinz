@@ -1,20 +1,25 @@
 package com.example.shenshi.coinz;
 
+import android.util.Log;
+
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 public class Coins {
 
-    private static double rate_peny = 0;
-    private static double rate_dollar = 0;
-    private static double rate_shil = 0;
-    private static double rate_quid = 0;
+    static double rate_peny = 0;
+    static double rate_dollar = 0;
+    static double rate_shil = 0;
+    static double rate_quid = 0;
 
-    private static HashMap<String,Double> peny = new HashMap<>();
-    private static HashMap<String,Double> dollar = new HashMap<>();
-    private static HashMap<String,Double> shil = new HashMap<>();
-    private static HashMap<String,Double> quid = new HashMap<>();
+    static HashMap<String,Double> peny = new HashMap<>();
+    static HashMap<String,Double> dollar = new HashMap<>();
+    static HashMap<String,Double> shil = new HashMap<>();
+    static HashMap<String,Double> quid = new HashMap<>();
 
     public static void setup_rate_peny (double rate){
         rate_peny = rate;
@@ -28,6 +33,11 @@ public class Coins {
     public static void setup_rate_quid (double rate){
         rate_quid = rate;
     }
+
+    // rates and data/time
+
+
+
 
     public static void add_coin (String id, String cur, double value) {
         switch (cur){

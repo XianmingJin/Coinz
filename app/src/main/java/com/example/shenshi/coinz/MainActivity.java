@@ -20,6 +20,7 @@ import android.widget.Toast;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.mapbox.android.core.location.LocationEngine;
 import com.mapbox.android.core.location.LocationEngineListener;
 import com.mapbox.android.core.location.LocationEnginePriority;
@@ -28,6 +29,7 @@ import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
 import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.FeatureCollection;
+import com.mapbox.geojson.GeoJson;
 import com.mapbox.geojson.Geometry;
 import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
@@ -49,12 +51,22 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
 
+import static java.util.Arrays.deepToString;
 
 
 public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener,OnMapReadyCallback, LocationEngineListener,PermissionsListener, MapboxMap.OnMarkerClickListener, MapboxMap.OnMapClickListener {
 
     private final String TAG = "MainActivity";
-    private LatLng cur;
+
+
+    //coins
+    private double rate_peny = 0;
+    private double rate_dollar = 0;
+    private double rate_shil = 0;
+    private double rate_quid = 0;
+    private String dataToday = "";
+    private String timeToday = "";
+    private LatLng cur = new LatLng(0,0);
     private LatLng loc_mark;
 
     //Map
@@ -177,13 +189,15 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
             enableLocation();
         }
 
+
+        List<Feature> coins = FeatureCollection.fromJson(DownloadCompleteRunner.result).features();
+        Log.d(TAG,"result of collection"+DownloadCompleteRunner.result);
+        Log.d(TAG,"result of collection"+coins);
+
         // adding markers
         Log.d(TAG,"result is "+ DownloadCompleteRunner.result.length());
         Log.d(TAG,"result is done");
 
-
-        List<Feature> coins = FeatureCollection.fromJson(DownloadCompleteRunner.result).features();
-        Log.d(TAG,"result is size"+coins);
         for (int i =0;i<coins.size();i++){
 
             Feature coin =  coins.get(i);
@@ -204,15 +218,118 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
             String symbol = j.get("marker-symbol").toString();
             String color = (j.get("marker-color").toString());
 
+            Boolean notContainskey = !(Coins.shil.containsKey(id)||Coins.dollar.containsKey(id)||
+                    Coins.quid.containsKey(id)||Coins.peny.containsKey(id));
+            Log.d(TAG,"containskey is "+notContainskey);
+            if (notContainskey) {
 
-            map.addMarker(new MarkerOptions().
-                    title(id).
-                    snippet("currency:"+cur+"\n"+"value:"+val).
-                    position(new LatLng(lat,lng))
-            );
-            mapboxMap.addOnMapClickListener(this);
-            mapboxMap.setOnMarkerClickListener(this);
+                IconFactory iconFactory = IconFactory.getInstance(MainActivity.this);
+                Icon icon_t = iconFactory.fromResource(R.drawable.mapbox_marker_icon_default);
+
+                switch(cur){
+                    case "QUID":
+                        Log.d(TAG,"currency is QUID");
+                        switch (symbol){
+                            case "1":
+                                icon_t = iconFactory.fromResource(R.drawable.yellow1);
+                            case "2":
+                                icon_t = iconFactory.fromResource(R.drawable.yellow2);
+                            case "3":
+                                icon_t = iconFactory.fromResource(R.drawable.yellow3);
+                            case "4":
+                                icon_t = iconFactory.fromResource(R.drawable.yellow4);
+                            case "5":
+                                icon_t = iconFactory.fromResource(R.drawable.yellow5);
+                            case "6":
+                                icon_t = iconFactory.fromResource(R.drawable.yellow6);
+                            case "7":
+                                icon_t = iconFactory.fromResource(R.drawable.yellow7);
+                            case "8":
+                                icon_t = iconFactory.fromResource(R.drawable.yellow8);
+                            case "9":
+                                icon_t = iconFactory.fromResource(R.drawable.yellow8);
+                        }
+                    case "DOLR":
+                        Log.d(TAG,"currency is DOLR");
+
+                        switch (symbol){
+                            case "1":
+                                icon_t = iconFactory.fromResource(R.drawable.green1);
+                            case "2":
+                                icon_t = iconFactory.fromResource(R.drawable.green2);
+                            case "3":
+                                icon_t = iconFactory.fromResource(R.drawable.green3);
+                            case "4":
+                                icon_t = iconFactory.fromResource(R.drawable.green4);
+                            case "5":
+                                icon_t = iconFactory.fromResource(R.drawable.green5);
+                            case "6":
+                                icon_t = iconFactory.fromResource(R.drawable.green6);
+                            case "7":
+                                icon_t = iconFactory.fromResource(R.drawable.green7);
+                            case "8":
+                                icon_t = iconFactory.fromResource(R.drawable.green8);
+                            case "9":
+                                icon_t = iconFactory.fromResource(R.drawable.green9);
+                        }
+                    case "SHIL":
+                        Log.d(TAG,"currency is SHIL");
+
+                        switch (symbol){
+                            case "1":
+                                icon_t = iconFactory.fromResource(R.drawable.blue1);
+                            case "2":
+                                icon_t = iconFactory.fromResource(R.drawable.blue2);
+                            case "3":
+                                icon_t = iconFactory.fromResource(R.drawable.blue3);
+                            case "4":
+                                icon_t = iconFactory.fromResource(R.drawable.blue4);
+                            case "5":
+                                icon_t = iconFactory.fromResource(R.drawable.blue5);
+                            case "6":
+                                icon_t = iconFactory.fromResource(R.drawable.blue6);
+                            case "7":
+                                icon_t = iconFactory.fromResource(R.drawable.blue7);
+                            case "8":
+                                icon_t = iconFactory.fromResource(R.drawable.blue8);
+                            case "9":
+                                icon_t = iconFactory.fromResource(R.drawable.blue9);
+                        }
+                    case "PENY":
+                        Log.d(TAG,"currency is PENY");
+
+                        switch (symbol){
+                            case "1":
+                                icon_t = iconFactory.fromResource(R.drawable.red1);
+                            case "2":
+                                icon_t = iconFactory.fromResource(R.drawable.red2);
+                            case "3":
+                                icon_t = iconFactory.fromResource(R.drawable.red3);
+                            case "4":
+                                icon_t = iconFactory.fromResource(R.drawable.red4);
+                            case "5":
+                                icon_t = iconFactory.fromResource(R.drawable.red5);
+                            case "6":
+                                icon_t = iconFactory.fromResource(R.drawable.red6);
+                            case "7":
+                                icon_t = iconFactory.fromResource(R.drawable.red7);
+                            case "8":
+                                icon_t = iconFactory.fromResource(R.drawable.red8);
+                            case "9":
+                                icon_t = iconFactory.fromResource(R.drawable.red9);
+                        }
+                }
+
+                map.addMarker(new MarkerOptions().
+                        title(id).
+                        snippet("currency:" + cur + "\n" + "value:" + val).
+                        icon(icon_t).
+                        position(new LatLng(lat, lng)));
+            }
         }
+
+        mapboxMap.addOnMapClickListener(this);
+        mapboxMap.setOnMarkerClickListener(this);
 
     }
 
@@ -264,6 +381,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
     private void setCameraPosition(Location location) {
         LatLng latLng = new LatLng(location.getLatitude(),location.getLongitude());
+        this.cur = latLng;
         map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 13.0));
     }
 
@@ -314,6 +432,10 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     public void onStart() {
 
         super.onStart();
+
+
+
+
 
         //logout
 
@@ -402,6 +524,42 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     @Override
     public boolean onMarkerClick(@NonNull Marker marker) {
         btn.setVisibility(View.VISIBLE);
+
+        btn.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick (View v){
+
+                LatLng pos = marker.getPosition();
+                double lat1 = pos.getLatitude();
+                double lng1 = pos.getLongitude();
+                Log.d(TAG,"marker position is :" + pos);
+                Log.d(TAG,"now we are at :"+ cur);
+                double lat2 = cur.getLatitude();
+                double lng2 = cur.getLongitude();
+                if (calculateDIstance.calculateDistanceInMeter(lat1,lng1,lat2,lng2) < 25){
+                    String id = marker.getTitle();
+                    String snip = marker.getSnippet();
+                    String[] ss = snip.split("[^a-zA-Z0-9\\.]");
+                    Log.d(TAG,"ss is "+ deepToString(ss));
+                    Log.d(TAG,"ss is the "+ (ss[2]));
+
+                    String cur = ss[2];
+                    double val = Double.parseDouble(ss[6]);
+                    Coins.add_coin(id,cur,val);
+                    map.removeMarker(marker);
+                    Toast.makeText(getApplicationContext(),"The marker (id: "+id+" ) is removed", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                else {
+                    Log.d(TAG,"current coins in wallet"+ Coins.quid.size());
+                    Toast.makeText(getApplicationContext(),"too far away from the coin", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+            }
+
+        });
+
         return false;
     }
 
@@ -410,15 +568,5 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     }
 
 
-   /* @Override
-    public boolean onMarkerClick(@NonNull Marker marker) {
-        LatLng loc = marker.getPosition();
-        String id = marker.getTitle();
-        String snippet = marker.getSnippet();
-        String [] ss = snippet.split("\\s");
-        String cur = ss[1];
-        double value = Double.parseDouble(ss [3]);
-        return true;
-    }
-    */
+
 }
