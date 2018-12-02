@@ -14,6 +14,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -32,6 +33,7 @@ import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.annotations.Icon;
 import com.mapbox.mapboxsdk.annotations.IconFactory;
+import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
@@ -49,9 +51,11 @@ import java.util.List;
 
 
 
-public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener,OnMapReadyCallback, LocationEngineListener,PermissionsListener {
+public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener,OnMapReadyCallback, LocationEngineListener,PermissionsListener, MapboxMap.OnMarkerClickListener, MapboxMap.OnMapClickListener {
 
     private final String TAG = "MainActivity";
+    private LatLng cur;
+    private LatLng loc_mark;
 
     //Map
     private MapView mapView;
@@ -60,6 +64,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     private LocationEngine locationEngine;
     private LocationLayerPlugin locationLayerPlugin;
     private Location originLocation;
+    private Button btn;
 
     private String downloadDate = ""; // Format: YYYY/MM/DD
     private final String preferencesFile = "MyPrefsFile"; // for storing preferences
@@ -97,6 +102,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         Mapbox.getInstance(this, getString(R.string.access_token));
 
         setContentView(R.layout.activity_main);
+        btn = (Button) findViewById(R.id.button);
 
 
         mapView = findViewById(R.id.mapView);
@@ -204,7 +210,8 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                     snippet("currency:"+cur+"\n"+"value:"+val).
                     position(new LatLng(lat,lng))
             );
-
+            mapboxMap.addOnMapClickListener(this);
+            mapboxMap.setOnMarkerClickListener(this);
         }
 
     }
@@ -331,7 +338,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         }
 
 
-
         mapView.onStart();
     }
 
@@ -393,6 +399,26 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         mapView.onSaveInstanceState(outState);
     }
 
+    @Override
+    public boolean onMarkerClick(@NonNull Marker marker) {
+        btn.setVisibility(View.VISIBLE);
+        return false;
+    }
+
+    public void onMapClick(@NonNull LatLng point) {
+        btn.setVisibility(View.GONE);
+    }
 
 
+   /* @Override
+    public boolean onMarkerClick(@NonNull Marker marker) {
+        LatLng loc = marker.getPosition();
+        String id = marker.getTitle();
+        String snippet = marker.getSnippet();
+        String [] ss = snippet.split("\\s");
+        String cur = ss[1];
+        double value = Double.parseDouble(ss [3]);
+        return true;
+    }
+    */
 }

@@ -22,5 +22,15 @@
         mapbox:mapbox_cameraZoom="15"
         mapbox:mapbox_styleUrl="@string/mapbox_style_mapbox_streets" />
 
+    <Button
+        android:id="@+id/button"
+        style="@style/Widget.AppCompat.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Collect"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
 
 </android.support.constraint.ConstraintLayout>
