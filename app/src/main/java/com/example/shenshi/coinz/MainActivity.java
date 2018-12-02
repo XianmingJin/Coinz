@@ -51,6 +51,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
 
+import static android.support.constraint.Constraints.TAG;
 import static java.util.Arrays.deepToString;
 
 
@@ -59,15 +60,8 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     private final String TAG = "MainActivity";
 
 
-    //coins
-    private double rate_peny = 0;
-    private double rate_dollar = 0;
-    private double rate_shil = 0;
-    private double rate_quid = 0;
-    private String dataToday = "";
-    private String timeToday = "";
-    private LatLng cur = new LatLng(0,0);
-    private LatLng loc_mark;
+
+    private LatLng current_location = new LatLng(0,0);
 
     //Map
     private MapView mapView;
@@ -212,11 +206,17 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
             Log.d(TAG,"loc is "+loc);
             //get properties
             JsonObject j = coin.properties();
-            String cur = j.get("currency").toString();
-            String val = j.get("value").toString();
-            String id = j.get("id").toString();
-            String symbol = j.get("marker-symbol").toString();
-            String color = (j.get("marker-color").toString());
+            String cur = j.get("currency").toString().replace("\"","" );
+
+            String val = j.get("value").toString().replace("\"","" );
+            String id = j.get("id").toString().replace("\"","" );
+            String symbol = j.get("marker-symbol").toString().replace("\"","" );
+            String color = (j.get("marker-color").toString()).replace("\"","" );
+            Log.d(TAG,"id is "+id);
+            Log.d(TAG,"val is "+val);
+
+            Log.d(TAG,"cur is "+cur);
+            Log.d(TAG,"symbol is "+symbol);
 
             Boolean notContainskey = !(Coins.shil.containsKey(id)||Coins.dollar.containsKey(id)||
                     Coins.quid.containsKey(id)||Coins.peny.containsKey(id));
@@ -225,101 +225,139 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
                 IconFactory iconFactory = IconFactory.getInstance(MainActivity.this);
                 Icon icon_t = iconFactory.fromResource(R.drawable.mapbox_marker_icon_default);
-
-                switch(cur){
-                    case "QUID":
-                        Log.d(TAG,"currency is QUID");
-                        switch (symbol){
-                            case "1":
-                                icon_t = iconFactory.fromResource(R.drawable.yellow1);
-                            case "2":
-                                icon_t = iconFactory.fromResource(R.drawable.yellow2);
-                            case "3":
-                                icon_t = iconFactory.fromResource(R.drawable.yellow3);
-                            case "4":
-                                icon_t = iconFactory.fromResource(R.drawable.yellow4);
-                            case "5":
-                                icon_t = iconFactory.fromResource(R.drawable.yellow5);
-                            case "6":
-                                icon_t = iconFactory.fromResource(R.drawable.yellow6);
-                            case "7":
-                                icon_t = iconFactory.fromResource(R.drawable.yellow7);
-                            case "8":
-                                icon_t = iconFactory.fromResource(R.drawable.yellow8);
-                            case "9":
-                                icon_t = iconFactory.fromResource(R.drawable.yellow8);
-                        }
-                    case "DOLR":
-                        Log.d(TAG,"currency is DOLR");
-
-                        switch (symbol){
-                            case "1":
-                                icon_t = iconFactory.fromResource(R.drawable.green1);
-                            case "2":
-                                icon_t = iconFactory.fromResource(R.drawable.green2);
-                            case "3":
-                                icon_t = iconFactory.fromResource(R.drawable.green3);
-                            case "4":
-                                icon_t = iconFactory.fromResource(R.drawable.green4);
-                            case "5":
-                                icon_t = iconFactory.fromResource(R.drawable.green5);
-                            case "6":
-                                icon_t = iconFactory.fromResource(R.drawable.green6);
-                            case "7":
-                                icon_t = iconFactory.fromResource(R.drawable.green7);
-                            case "8":
-                                icon_t = iconFactory.fromResource(R.drawable.green8);
-                            case "9":
-                                icon_t = iconFactory.fromResource(R.drawable.green9);
-                        }
-                    case "SHIL":
-                        Log.d(TAG,"currency is SHIL");
-
-                        switch (symbol){
-                            case "1":
-                                icon_t = iconFactory.fromResource(R.drawable.blue1);
-                            case "2":
-                                icon_t = iconFactory.fromResource(R.drawable.blue2);
-                            case "3":
-                                icon_t = iconFactory.fromResource(R.drawable.blue3);
-                            case "4":
-                                icon_t = iconFactory.fromResource(R.drawable.blue4);
-                            case "5":
-                                icon_t = iconFactory.fromResource(R.drawable.blue5);
-                            case "6":
-                                icon_t = iconFactory.fromResource(R.drawable.blue6);
-                            case "7":
-                                icon_t = iconFactory.fromResource(R.drawable.blue7);
-                            case "8":
-                                icon_t = iconFactory.fromResource(R.drawable.blue8);
-                            case "9":
-                                icon_t = iconFactory.fromResource(R.drawable.blue9);
-                        }
-                    case "PENY":
-                        Log.d(TAG,"currency is PENY");
-
-                        switch (symbol){
-                            case "1":
-                                icon_t = iconFactory.fromResource(R.drawable.red1);
-                            case "2":
-                                icon_t = iconFactory.fromResource(R.drawable.red2);
-                            case "3":
-                                icon_t = iconFactory.fromResource(R.drawable.red3);
-                            case "4":
-                                icon_t = iconFactory.fromResource(R.drawable.red4);
-                            case "5":
-                                icon_t = iconFactory.fromResource(R.drawable.red5);
-                            case "6":
-                                icon_t = iconFactory.fromResource(R.drawable.red6);
-                            case "7":
-                                icon_t = iconFactory.fromResource(R.drawable.red7);
-                            case "8":
-                                icon_t = iconFactory.fromResource(R.drawable.red8);
-                            case "9":
-                                icon_t = iconFactory.fromResource(R.drawable.red9);
-                        }
+                if (cur.equals ("QUID")){
+                    Log.d(TAG,"currency is QUID");
+                    if (symbol.equals("0")){
+                        icon_t = iconFactory.fromResource(R.drawable.yellow0);
+                    }
+                    if (symbol.equals("1")){
+                        icon_t = iconFactory.fromResource(R.drawable.yellow1);
+                    }
+                    if(symbol.equals("2")){
+                        icon_t = iconFactory.fromResource(R.drawable.yellow2);
+                    }
+                    if(symbol.equals("3")){
+                        icon_t = iconFactory.fromResource(R.drawable.yellow3);
+                    }
+                    if (symbol.equals("4")){
+                        icon_t = iconFactory.fromResource(R.drawable.yellow4);
+                    }
+                    if(symbol.equals("5")){
+                        icon_t = iconFactory.fromResource(R.drawable.yellow5);
+                    }
+                    if(symbol.equals("6")){
+                        icon_t = iconFactory.fromResource(R.drawable.yellow6);
+                    }
+                    if (symbol.equals("7")){
+                        icon_t = iconFactory.fromResource(R.drawable.yellow7);
+                    }
+                    if(symbol.equals("8")){
+                        icon_t = iconFactory.fromResource(R.drawable.yellow8);
+                    }
+                    if(symbol.equals("9")){
+                        icon_t = iconFactory.fromResource(R.drawable.yellow9);
+                    }
+                }
+                if (cur.equals("DOLR")){
+                    Log.d(TAG,"currency is DORL");
+                    if (symbol.equals("0")){
+                        icon_t = iconFactory.fromResource(R.drawable.green0);
+                    }
+                    if (symbol.equals("1")){
+                        icon_t = iconFactory.fromResource(R.drawable.green1);
+                    }
+                    if(symbol.equals("2")){
+                        icon_t = iconFactory.fromResource(R.drawable.green2);
+                    }
+                    if(symbol.equals("3")){
+                        icon_t = iconFactory.fromResource(R.drawable.green3);
+                    }
+                    if (symbol.equals("4")){
+                        icon_t = iconFactory.fromResource(R.drawable.green4);
+                    }
+                    if(symbol.equals("5")){
+                        icon_t = iconFactory.fromResource(R.drawable.green5);
+                    }
+                    if(symbol.equals("6")){
+                        icon_t = iconFactory.fromResource(R.drawable.green6);
+                    }
+                    if(symbol.equals("7")){
+                        icon_t = iconFactory.fromResource(R.drawable.green7);
+                    }
+                    if(symbol.equals("8")){
+                        icon_t = iconFactory.fromResource(R.drawable.green8);
+                    }
+                    if(symbol.equals("9")){
+                        icon_t = iconFactory.fromResource(R.drawable.green9);
+                    }
+                }
+                if (cur.equals("SHIL")){
+                    Log.d(TAG,"currency is SHIL");
+                    if(symbol.equals("0")){
+                        icon_t = iconFactory.fromResource(R.drawable.blue0);
+                    }
+                    if(symbol.equals("1")){
+                        icon_t = iconFactory.fromResource(R.drawable.blue1);
+                    }
+                    if(symbol.equals("2")){
+                        icon_t = iconFactory.fromResource(R.drawable.blue2);
+                    }
+                    if(symbol.equals("3")){
+                        icon_t = iconFactory.fromResource(R.drawable.blue3);
+                    }
+                    if(symbol.equals("4")){
+                        icon_t = iconFactory.fromResource(R.drawable.blue4);
+                    }
+                    if(symbol.equals("5")){
+                        icon_t = iconFactory.fromResource(R.drawable.blue5);
+                    }
+                    if(symbol.equals("6")){
+                        icon_t = iconFactory.fromResource(R.drawable.blue6);
+                    }
+                    if(symbol.equals("7")){
+                        icon_t = iconFactory.fromResource(R.drawable.blue7);
+                    }
+                    if(symbol.equals("8")){
+                        icon_t = iconFactory.fromResource(R.drawable.blue8);
+                    }
+                    if(symbol.equals("9")){
+                        icon_t = iconFactory.fromResource(R.drawable.blue9);
+                    }
                 }
 
+                if (cur.equals("PENY")){
+                    Log.d(TAG,"currency is PENY");
+                    if (symbol.equals("0")){
+                        icon_t = iconFactory.fromResource(R.drawable.red0);
+                    }
+                    if (symbol.equals("1")){
+                        icon_t = iconFactory.fromResource(R.drawable.red1);
+                    }
+                    if(symbol.equals("2")){
+                        icon_t = iconFactory.fromResource(R.drawable.red2);
+                    }
+                    if(symbol.equals("3")){
+                        icon_t = iconFactory.fromResource(R.drawable.red3);
+                    }
+                    if (symbol.equals("4")){
+                        icon_t = iconFactory.fromResource(R.drawable.red4);
+                    }
+                    if(symbol.equals("5")){
+                        icon_t = iconFactory.fromResource(R.drawable.red5);
+                    }
+                    if(symbol.equals("6")){
+                        icon_t = iconFactory.fromResource(R.drawable.red6);
+                    }
+                    if(symbol.equals("7")){
+                        icon_t = iconFactory.fromResource(R.drawable.red7);
+                    }
+                    if(symbol.equals("8")){
+                        icon_t = iconFactory.fromResource(R.drawable.red8);
+                    }
+                    if(symbol.equals("9")){
+                        icon_t = iconFactory.fromResource(R.drawable.red9);
+                    }
+                }
                 map.addMarker(new MarkerOptions().
                         title(id).
                         snippet("currency:" + cur + "\n" + "value:" + val).
@@ -381,7 +419,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
     private void setCameraPosition(Location location) {
         LatLng latLng = new LatLng(location.getLatitude(),location.getLongitude());
-        this.cur = latLng;
+        this.current_location = latLng;
         map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 13.0));
     }
 
@@ -533,18 +571,24 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                 double lat1 = pos.getLatitude();
                 double lng1 = pos.getLongitude();
                 Log.d(TAG,"marker position is :" + pos);
-                Log.d(TAG,"now we are at :"+ cur);
-                double lat2 = cur.getLatitude();
-                double lng2 = cur.getLongitude();
+                Log.d(TAG,"now we are at :"+ current_location);
+                double lat2 = current_location.getLatitude();
+                double lng2 = current_location.getLongitude();
                 if (calculateDIstance.calculateDistanceInMeter(lat1,lng1,lat2,lng2) < 25){
-                    String id = marker.getTitle();
+                    String id = marker.getTitle().replace("\"","" );
+                    Log.d(TAG,"ss coin now id is "+ id);
+
                     String snip = marker.getSnippet();
                     String[] ss = snip.split("[^a-zA-Z0-9\\.]");
                     Log.d(TAG,"ss is "+ deepToString(ss));
                     Log.d(TAG,"ss is the "+ (ss[2]));
 
-                    String cur = ss[2];
-                    double val = Double.parseDouble(ss[6]);
+                    String cur = ss[1];
+                    double val = Double.parseDouble(ss[3]);
+                    Log.d(TAG,"ss coin cur is "+ cur);
+                    Log.d(TAG,"ss coin val is "+ val);
+
+
                     Coins.add_coin(id,cur,val);
                     map.removeMarker(marker);
                     Toast.makeText(getApplicationContext(),"The marker (id: "+id+" ) is removed", Toast.LENGTH_SHORT).show();
