@@ -4,6 +4,15 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".WalletActivity">
+    tools:context=".WalletShilFragment">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:text="@string/shil"
+        tools:layout_editor_absoluteX="136dp"
+        tools:layout_editor_absoluteY="274dp" />
 
 </android.support.constraint.ConstraintLayout>

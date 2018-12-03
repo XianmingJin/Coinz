@@ -1,5 +1,8 @@
 <resources>
     <string name="app_name">Coinz</string>
+    <string name = "navigation_drawer_open">Open naviagation drawer</string>
+    <string name = "navigation_drawer_close">Close naviagation drawer</string>
+
     <string name="access_token">pk.eyJ1IjoieGlhbm1pbmciLCJhIjoiY2pvNmJrN3k1MGZzdTNrb2FuZTBrOXdubSJ9.vds-Scq8-Z-G9evslm13Cw</string>
     <string name="title_activity_login">Sign in</string>
     <!-- Strings related to login -->
@@ -27,4 +30,12 @@
     <string name="wallet">wallet</string>
     <string name="bank">bank</string>
     <string name="map">map</string>
+    <string name="dolr">DOLR</string>
+    <string name="gold">GOLD</string>
+    <string name="shil">SHIL</string>
+    <string name="quid">QUID</string>
+    <string name="peny">PENY</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

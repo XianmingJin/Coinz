@@ -19,6 +19,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.FirebaseDatabase;
 
+import java.util.HashMap;
+
 
 public class SignUp_activity extends AppCompatActivity {
 
@@ -75,8 +77,29 @@ public class SignUp_activity extends AppCompatActivity {
                                     Log.d(TAG, "createUserWithEmail:Success");
                                     FirebaseUser user = mAuth.getCurrentUser();
 
+                                    HashMap<String,Double> peny = new  HashMap<>();
+                                    HashMap<String,Double> dolr = new  HashMap<>();
+                                    HashMap<String,Double> shil = new  HashMap<>();
+                                    HashMap<String,Double> quid = new  HashMap<>();
+
+                                    peny.put("peny",0.);
+                                    dolr.put("dolr",0.);
+                                    shil.put("shil",0.);
+                                    quid.put("quid",0.);
+
+
+                                    Wallet wallet = new Wallet(peny, dolr, shil, quid);
+
+                                    Bank bank = new Bank (peny,dolr,shil,quid,0);
+                                    UserInfo new_user = new UserInfo(email);
+
                                     FirebaseDatabase.getInstance().getReference("users")
-                                            .child(user.getUid()).setValue(email);
+                                            .child(user.getUid()).setValue(new_user);
+                                    FirebaseDatabase.getInstance().getReference("users")
+                                            .child(user.getUid()).child("Wallet").setValue(wallet);
+                                    FirebaseDatabase.getInstance().getReference("users")
+                                            .child(user.getUid()).child("Bank").setValue(bank);
+
 
                                     Intent intent = new Intent(SignUp_activity.this, MainActivity.class);
                                     startActivity(intent);
